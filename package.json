@@ -1,0 +1,17 @@
+{
+  "name": "telegram-subscription-manager",
+  "version": "1.0.0",
+  "description": "Subscription management platform for Telegram crypto signals groups with email and dashboard notifications.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dayjs": "^1.11.9",
+    "express": "^4.18.2",
+    "nodemailer": "^8.0.7",
+    "sqlite3": "^6.0.1"
+  }
+}
