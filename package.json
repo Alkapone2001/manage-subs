@@ -1,7 +1,7 @@
 {
-  "name": "telegram-subscription-manager",
+  "name": "subscription-manager",
   "version": "1.0.0",
-  "description": "Subscription management platform for Telegram crypto signals groups with email and dashboard notifications.",
+  "description": "Subscription management platform with client registration, dashboard notifications, and email alerts.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

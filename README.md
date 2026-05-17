@@ -1,6 +1,6 @@
-# Telegram Subscription Manager
+# Subscription Manager
 
-A minimal platform to manage Telegram crypto signal group subscriptions with customer registration, plan selection, dashboard notifications, and email alerts for subscriptions ending soon.
+A minimal platform to manage crypto signal group subscriptions with customer registration, plan selection, dashboard notifications, and email alerts for subscriptions ending soon.
 
 ## Features
 
@@ -9,6 +9,7 @@ A minimal platform to manage Telegram crypto signal group subscriptions with cus
   - Last name
   - Birthday
   - Discord tag
+  - Phone number
   - Email
   - Subscription length in months
 - Dashboard notification center for expiring subscriptions
@@ -38,6 +39,7 @@ export EMAIL_SECURE=false
 export NOTIFICATION_WINDOW_DAYS=7
 ```
 
+Use the dashboard settings panel to save the admin receiver email and notification window.
 If you want clients to subscribe for any number of months, enter the desired month count in the dashboard form.
 
 3. Start the app:

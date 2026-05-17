@@ -13,6 +13,7 @@ const init = () => {
         lastName TEXT NOT NULL,
         birthday TEXT NOT NULL,
         discordTag TEXT NOT NULL,
+        phoneNumber TEXT,
         email TEXT NOT NULL,
         registeredAt TEXT NOT NULL,
         planMonths INTEGER NOT NULL,
@@ -29,6 +30,14 @@ const init = () => {
     `);
 
     db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('notificationWindowDays', '7'), ('adminEmail', '')`);
+
+    db.all(`PRAGMA table_info(clients)`, [], (err, columns) => {
+      if (!err && columns) {
+        if (!columns.find((column) => column.name === 'phoneNumber')) {
+          db.run(`ALTER TABLE clients ADD COLUMN phoneNumber TEXT`);
+        }
+      }
+    });
   });
 };
 

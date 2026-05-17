@@ -65,6 +65,7 @@ const renderClientList = (items) => {
       <tr>
         <td>${item.firstName} ${item.lastName}</td>
         <td>${item.email}</td>
+        <td>${item.phoneNumber || '-'}</td>
         <td>${item.discordTag}</td>
         <td>${formatDate(item.registeredAt)}</td>
         <td>${item.planMonths} month(s)</td>
@@ -85,6 +86,7 @@ const renderClientList = (items) => {
         <tr>
           <th>Client</th>
           <th>Email</th>
+          <th>Phone</th>
           <th>Discord</th>
           <th>Registered</th>
           <th>Plan</th>
@@ -196,9 +198,6 @@ clientForm.addEventListener('submit', async (event) => {
     lastName: formData.get('lastName').trim(),
     birthday: formData.get('birthday'),
     discordTag: formData.get('discordTag').trim(),
-    email: formData.get('email').trim(),
-    planMonths: Number(formData.get('planMonths')),
-  };
 
   try {
     const response = await fetch('/api/clients', {

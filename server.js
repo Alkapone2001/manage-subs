@@ -1,8 +1,7 @@
 const express = require('express');
 const path = require('path');
 const dayjs = require('dayjs');
-const nodemailer = require('nodemailer');
-const { db, init, getSetting, setSetting, getAllSettings } = require('./db');
+const nodemailer = require('nodemailer');const session = require('express-session');const { db, init, getSetting, setSetting, getAllSettings } = require('./db');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -57,8 +56,8 @@ const createClient = (client, callback) => {
   const expiresAt = dayjs(registeredAt).add(client.planMonths, 'month').endOf('day').toISOString();
 
   db.run(
-    `INSERT INTO clients (firstName, lastName, birthday, discordTag, email, registeredAt, planMonths, expiresAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [client.firstName, client.lastName, client.birthday, client.discordTag, client.email, registeredAt, client.planMonths, expiresAt],
+    `INSERT INTO clients (firstName, lastName, birthday, discordTag, phoneNumber, email, registeredAt, planMonths, expiresAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [client.firstName, client.lastName, client.birthday, client.discordTag, client.phoneNumber || null, client.email, registeredAt, client.planMonths, expiresAt],
     function (err) {
       if (err) return callback(err);
       callback(null, { id: this.lastID, ...client, registeredAt, expiresAt });
@@ -143,7 +142,7 @@ app.get('/api/clients', (req, res) => {
 
 app.post('/api/clients', (req, res) => {
   const client = req.body;
-  const required = ['firstName', 'lastName', 'birthday', 'discordTag', 'email', 'planMonths'];
+  const required = ['firstName', 'lastName', 'birthday', 'discordTag', 'phoneNumber', 'email', 'planMonths'];
   const missingFields = required.filter((field) => !client[field]);
   if (missingFields.length) {
     return res.status(400).json({ error: `Missing fields: ${missingFields.join(', ')}` });
