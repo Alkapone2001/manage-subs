@@ -5,7 +5,9 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN apt-get update && apt-get install -y python3 make g++ && \
+  npm ci --only=production --build-from-source=sqlite3 && \
+  apt-get remove --purge -y python3 make g++ && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Copy app
 COPY . ./
