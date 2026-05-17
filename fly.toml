@@ -1,0 +1,11 @@
+app = "subscription-manager"
+
+[build]
+  image = "Dockerfile"
+
+[env]
+  PORT = "3000"
+
+[[mounts]]
+  source = "data"
+  destination = "/data"
