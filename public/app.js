@@ -14,6 +14,8 @@ const profileMessage = document.getElementById('profile-message');
 const notificationsContainer = document.getElementById('notifications');
 const clientList = document.getElementById('client-list');
 const notificationWindowInput = document.getElementById('notificationWindowDays');
+const testEmailButton = document.getElementById('testEmailButton');
+const testEmailMessage = document.getElementById('testEmailMessage');
 
 let notificationWindowDays = 7;
 
@@ -340,5 +342,19 @@ profileForm.addEventListener('submit', async (event) => {
     showMessage(profileMessage, error.message, 'error');
   }
 });
+
+if (testEmailButton) {
+  testEmailButton.addEventListener('click', async () => {
+    showMessage(testEmailMessage, 'Duke dërguar...', '');
+    try {
+      const response = await fetch('/api/test-email', { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Dërgimi dështoi');
+      showMessage(testEmailMessage, `Email i testit u dërgua te ${result.to}`, 'success');
+    } catch (err) {
+      showMessage(testEmailMessage, err.message || 'Gabim gjatë dërgimit', 'error');
+    }
+  });
+}
 
 fetchAuthStatus();
