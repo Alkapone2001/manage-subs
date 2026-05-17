@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const path = require('path');
 const dayjs = require('dayjs');
 const nodemailer = require('nodemailer');
@@ -134,6 +135,38 @@ const sendAdminEmail = async (clients, adminEmail, windowDays) => {
     text: messageBody,
   });
 };
+
+const sendRawEmail = async (to, subject, text) => {
+  const smtpConfig = getSmtpConfig();
+  if (!smtpConfig || !to) throw new Error('SMTP config or recipient missing');
+  const transporter = nodemailer.createTransport(smtpConfig);
+  return transporter.sendMail({
+    from: process.env.EMAIL_FROM || smtpConfig.auth.user,
+    to,
+    subject,
+    text,
+  });
+};
+
+// Protected endpoint to trigger a test email to admin
+app.post('/api/test-email', requireAuth, async (req, res) => {
+  try {
+    getAdminEmail(async (err, adminEmail) => {
+      if (err) return res.status(500).json({ error: 'Failed to load admin email' });
+      if (!adminEmail) return res.status(400).json({ error: 'Admin email not set' });
+      try {
+        await sendRawEmail(adminEmail, 'Test email from Subscription Manager', 'This is a test email to verify SMTP settings.');
+        res.json({ ok: true, to: adminEmail });
+      } catch (sendErr) {
+        console.error('Test email send failed', sendErr);
+        res.status(500).json({ error: 'Failed to send test email', details: String(sendErr) });
+      }
+    });
+  } catch (ex) {
+    console.error('Test email endpoint error', ex);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
 
 const notifyExpiringSubscriptions = () => {
   getNotificationWindowDays((err, windowDays) => {

@@ -50,6 +50,38 @@ npm start
 
 4. Open the browser at `http://localhost:3000`.
 
+## SMTP / Email setup
+
+To enable email notifications, set environment variables (create a `.env` file in the project root) or export them in your shell. Example `.env` values:
+
+```
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@example.com
+EMAIL_PASS=your-smtp-password-or-app-password
+EMAIL_SECURE=false
+EMAIL_FROM=your-email@example.com
+ADMIN_EMAIL=admin@yourdomain.com
+SESSION_SECRET=some_long_random_value
+```
+
+If you use Gmail, create an App Password and use it as `EMAIL_PASS`.
+
+There is a protected test endpoint you can call after logging in to verify SMTP:
+
+1) Log in via the UI using the admin credentials (set `ADMIN_USER` / `ADMIN_PASS` if you changed them).
+2) Use `curl` to authenticate and trigger a test email:
+
+```bash
+# 1) login and save cookies
+curl -c cookies.txt -H "Content-Type: application/json" -d '{"username":"admin","password":"admin123"}' http://localhost:3000/api/login
+
+# 2) trigger test email
+curl -b cookies.txt -X POST http://localhost:3000/api/test-email
+```
+
+The response will indicate success or an error message with details.
+
 ## Usage
 
 - Add new subscriptions from the web form.
