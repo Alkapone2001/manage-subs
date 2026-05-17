@@ -3,11 +3,8 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'subscription-manager-humming-stream-9896'
+app = "manage-subs"
 primary_region = 'fra'
-
-[build]
-  image = 'Dockerfile'
 
 [env]
   PORT = '3000'
