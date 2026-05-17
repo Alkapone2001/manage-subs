@@ -1,14 +1,54 @@
 const express = require('express');
 const path = require('path');
 const dayjs = require('dayjs');
-const nodemailer = require('nodemailer');const session = require('express-session');const { db, init, getSetting, setSetting, getAllSettings } = require('./db');
+const nodemailer = require('nodemailer');
+const session = require('express-session');
+const { db, init, getSetting, setSetting, getAllSettings } = require('./db');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 init();
 app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'admin-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 },
+}));
 app.use(express.static(path.join(__dirname, 'public')));
+
+const adminUser = process.env.ADMIN_USER || 'admin';
+const adminPass = process.env.ADMIN_PASS || 'admin123';
+
+const requireAuth = (req, res, next) => {
+  if (req.session && req.session.authenticated) {
+    return next();
+  }
+  res.status(401).json({ error: 'Nuk është i autorizuar' });
+};
+
+app.post('/api/login', (req, res) => {
+  const username = (req.body.username || '').trim();
+  const password = (req.body.password || '').trim();
+
+  if (username === adminUser && password === adminPass) {
+    req.session.authenticated = true;
+    return res.json({ authenticated: true });
+  }
+
+  res.status(401).json({ error: 'Kredencialet nuk janë të sakta' });
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.json({ authenticated: false });
+  });
+});
+
+app.get('/api/auth-status', (req, res) => {
+  res.json({ authenticated: !!req.session?.authenticated });
+});
 
 const parsePositiveInt = (value, fallback) => {
   const parsed = Number(value);
@@ -133,14 +173,14 @@ const notifyExpiringSubscriptions = () => {
   });
 };
 
-app.get('/api/clients', (req, res) => {
+app.get('/api/clients', requireAuth, (req, res) => {
   getAllClients((err, rows) => {
     if (err) return res.status(500).json({ error: 'Failed to fetch clients' });
     res.json(rows);
   });
 });
 
-app.post('/api/clients', (req, res) => {
+app.post('/api/clients', requireAuth, (req, res) => {
   const client = req.body;
   const required = ['firstName', 'lastName', 'birthday', 'discordTag', 'phoneNumber', 'email', 'planMonths'];
   const missingFields = required.filter((field) => !client[field]);
@@ -157,7 +197,7 @@ app.post('/api/clients', (req, res) => {
   });
 });
 
-app.delete('/api/clients/:id', (req, res) => {
+app.delete('/api/clients/:id', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   db.run(`DELETE FROM clients WHERE id = ?`, [id], function (err) {
     if (err) return res.status(500).json({ error: 'Failed to delete client' });
@@ -166,7 +206,7 @@ app.delete('/api/clients/:id', (req, res) => {
   });
 });
 
-app.patch('/api/clients/:id/extend', (req, res) => {
+app.patch('/api/clients/:id/extend', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   const months = Number(req.body.months);
   if (!Number.isInteger(months) || months <= 0) {
@@ -193,7 +233,7 @@ app.patch('/api/clients/:id/extend', (req, res) => {
   });
 });
 
-app.get('/api/settings', (req, res) => {
+app.get('/api/settings', requireAuth, (req, res) => {
   getAllSettings((err, settings) => {
     if (err) return res.status(500).json({ error: 'Failed to load settings' });
     res.json({
@@ -203,23 +243,43 @@ app.get('/api/settings', (req, res) => {
   });
 });
 
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', requireAuth, (req, res) => {
   const email = (req.body.adminEmail || '').trim();
-  const windowDays = parsePositiveInt(req.body.notificationWindowDays, 7);
-  if (!email) {
-    return res.status(400).json({ error: 'Admin email is required' });
+  const windowDays = req.body.notificationWindowDays !== undefined ? parsePositiveInt(req.body.notificationWindowDays, null) : null;
+  if (!email && windowDays === null) {
+    return res.status(400).json({ error: 'Nuk ka asnjë vendosje për të ruajtur' });
   }
 
-  setSetting('adminEmail', email, (err) => {
-    if (err) return res.status(500).json({ error: 'Failed to save admin email' });
+  const updateSettings = [];
+  const afterUpdate = () => {
+    getAllSettings((err, settings) => {
+      if (err) return res.status(500).json({ error: 'Failed to load settings' });
+      res.json({
+        adminEmail: settings.adminEmail || process.env.ADMIN_EMAIL || '',
+        notificationWindowDays: parsePositiveInt(settings.notificationWindowDays, 7),
+      });
+    });
+  };
+
+  const saveWindow = () => {
+    if (windowDays === null) return afterUpdate();
     setSetting('notificationWindowDays', String(windowDays), (settingsErr) => {
       if (settingsErr) return res.status(500).json({ error: 'Failed to save notification window' });
-      res.json({ adminEmail: email, notificationWindowDays: windowDays });
+      afterUpdate();
     });
-  });
+  };
+
+  if (email) {
+    setSetting('adminEmail', email, (err) => {
+      if (err) return res.status(500).json({ error: 'Failed to save admin email' });
+      saveWindow();
+    });
+  } else {
+    saveWindow();
+  }
 });
 
-app.get('/api/notifications', (req, res) => {
+app.get('/api/notifications', requireAuth, (req, res) => {
   getNotificationWindowDays((err, windowDays) => {
     if (err) return res.status(500).json({ error: 'Failed to load notification settings' });
     getExpiringQuery(windowDays, (queryErr, rows) => {

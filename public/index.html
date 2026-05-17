@@ -1,83 +1,131 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sq">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Subscription Manager</title>
+  <title>Menaxheri i Abonimeve</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
-    <header>
-      <h1>Subscription Manager</h1>
-      <p>Simple dashboard to register clients, manage plans, and receive expiring subscription alerts.</p>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Dashboard Administrator</p>
+        <h1>Menaxheri i Abonimeve</h1>
+        <p class="subtitle">Menaxhoni klientët, njoftimet dhe abonimet me një ndërfaqe profesionale.</p>
+      </div>
+      <div class="header-actions">
+        <button id="logoutButton" class="secondary-button">Dil</button>
+      </div>
     </header>
 
-    <section class="card-grid">
-      <section class="card">
-        <h2>Register a new client</h2>
-        <form id="client-form">
+    <section id="login-screen" class="auth-card hidden">
+      <div class="auth-panel card">
+        <h2>Hyrja e Administratorit</h2>
+        <p>Ky akses është i disponueshëm vetëm për administratorin.</p>
+        <form id="login-form">
           <div class="field-row">
-            <label>First name</label>
-            <input type="text" name="firstName" required />
+            <label>Përdoruesi</label>
+            <input type="text" id="loginUsername" placeholder="admin" required />
           </div>
           <div class="field-row">
-            <label>Last name</label>
-            <input type="text" name="lastName" required />
+            <label>Fjalëkalimi</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required />
           </div>
-          <div class="field-row">
-            <label>Birthday</label>
-            <input type="date" name="birthday" required />
-          </div>
-          <div class="field-row">
-            <label>Discord tag</label>
-            <input type="text" name="discordTag" placeholder="username#1234" required />
-          </div>
-          <div class="field-row">
-            <label>Phone number</label>
-            <input type="tel" name="phoneNumber" placeholder="+1234567890" required />
-          </div>
-          <div class="field-row">
-            <label>Email</label>
-            <input type="email" name="email" required />
-          </div>
-          <div class="field-row">
-            <label>Subscription length (months)</label>
-            <input type="number" name="planMonths" min="1" value="1" required />
-            <small>Enter any number of months, e.g. 1, 3, 12.</small>
-          </div>
-          <button type="submit" class="primary-button">Register client</button>
+          <button type="submit" class="primary-button">Hyr</button>
         </form>
-        <div id="form-message" class="message"></div>
-      </section>
-
-      <section class="card">
-        <h2>Notification settings</h2>
-        <form id="settings-form">
-          <div class="field-row">
-            <label>Admin email</label>
-            <input type="email" id="adminEmail" name="adminEmail" placeholder="you@example.com" required />
-          </div>
-          <div class="field-row">
-            <label>Notify before</label>
-            <input type="number" id="notificationWindowDays" name="notificationWindowDays" min="1" value="7" required />
-            <small>How many days before expiration to show notifications.</small>
-          </div>
-          <button type="submit" class="primary-button">Save settings</button>
-        </form>
-        <div id="settings-message" class="message"></div>
-        <p class="settings-note">Email notifications use SMTP settings from environment variables. Enter the receiver email above.</p>
-      </section>
+        <div id="login-message" class="message"></div>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>Notification center</h2>
-      <div id="notifications"></div>
-    </section>
+    <section id="main-app" class="main-grid hidden">
+      <aside class="sidebar">
+        <section class="card profile-card">
+          <div class="profile-header">
+            <div>
+              <p class="eyebrow">Profili</p>
+              <h2>Administrator</h2>
+            </div>
+          </div>
+          <div class="profile-field">
+            <span class="label">Email njoftimi</span>
+            <strong id="profileEmailLabel">-</strong>
+          </div>
+          <form id="profile-form">
+            <div class="field-row">
+              <label>Ndrysho email</label>
+              <input type="email" id="profileEmail" placeholder="admin@example.com" required />
+            </div>
+            <button type="submit" class="primary-button">Ruaj email</button>
+            <div id="profile-message" class="message"></div>
+          </form>
+        </section>
 
-    <section class="card">
-      <h2>All subscriptions</h2>
-      <div id="client-list"></div>
+        <section class="card settings-card">
+          <h2>Vendosjet</h2>
+          <form id="settings-form">
+            <div class="field-row">
+              <label>Njofto para</label>
+              <input type="number" id="notificationWindowDays" name="notificationWindowDays" min="1" value="7" required />
+              <small>Sa ditë përpara skadimit do të tregohen njoftimet.</small>
+            </div>
+            <button type="submit" class="primary-button">Ruaj njoftimet</button>
+          </form>
+          <div id="settings-message" class="message"></div>
+        </section>
+      </aside>
+
+      <main class="content-area">
+        <section class="card">
+          <h2>Regjistro klient të ri</h2>
+          <form id="client-form">
+            <div class="field-row">
+              <label>Emri</label>
+              <input type="text" name="firstName" required />
+            </div>
+            <div class="field-row">
+              <label>Mbiemri</label>
+              <input type="text" name="lastName" required />
+            </div>
+            <div class="field-row grid-2">
+              <div>
+                <label>Data e lindjes</label>
+                <input type="date" name="birthday" required />
+              </div>
+              <div>
+                <label>Discord tag</label>
+                <input type="text" name="discordTag" placeholder="username#1234" required />
+              </div>
+            </div>
+            <div class="field-row grid-2">
+              <div>
+                <label>Numri i telefonit</label>
+                <input type="tel" name="phoneNumber" placeholder="+355 69 123 4567" required />
+              </div>
+              <div>
+                <label>Email</label>
+                <input type="email" name="email" placeholder="klient@example.com" required />
+              </div>
+            </div>
+            <div class="field-row">
+              <label>Kohëzgjatja e abonimit (muaj)</label>
+              <input type="number" name="planMonths" min="1" value="1" required />
+            </div>
+            <button type="submit" class="primary-button">Regjistro klient</button>
+          </form>
+          <div id="form-message" class="message"></div>
+        </section>
+
+        <section class="card">
+          <h2>Qendra e njoftimeve</h2>
+          <div id="notifications"></div>
+        </section>
+
+        <section class="card">
+          <h2>Të gjitha abonimet</h2>
+          <div id="client-list"></div>
+        </section>
+      </main>
     </section>
   </div>
 

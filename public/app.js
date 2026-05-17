@@ -1,24 +1,42 @@
+const loginForm = document.getElementById('login-form');
+const loginMessage = document.getElementById('login-message');
+const loginScreen = document.getElementById('login-screen');
+const mainApp = document.getElementById('main-app');
+const logoutButton = document.getElementById('logoutButton');
 const clientForm = document.getElementById('client-form');
 const settingsForm = document.getElementById('settings-form');
+const profileForm = document.getElementById('profile-form');
+const profileEmailInput = document.getElementById('profileEmail');
+const profileEmailLabel = document.getElementById('profileEmailLabel');
 const formMessage = document.getElementById('form-message');
 const settingsMessage = document.getElementById('settings-message');
+const profileMessage = document.getElementById('profile-message');
 const notificationsContainer = document.getElementById('notifications');
 const clientList = document.getElementById('client-list');
-const adminEmailInput = document.getElementById('adminEmail');
 const notificationWindowInput = document.getElementById('notificationWindowDays');
 
 let notificationWindowDays = 7;
 
-const formatDate = (value) => new Date(value).toLocaleDateString();
+const formatDate = (value) => new Date(value).toLocaleDateString('sq-AL', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
 
 const showMessage = (element, message, type = 'success') => {
   element.textContent = message;
   element.className = `message ${type}`;
 };
 
+const showScreen = (authenticated) => {
+  loginScreen.classList.toggle('hidden', authenticated);
+  mainApp.classList.toggle('hidden', !authenticated);
+  logoutButton.classList.toggle('hidden', !authenticated);
+};
+
 const renderNotifications = (data) => {
   if (!data || !data.items || data.items.length === 0) {
-    notificationsContainer.innerHTML = '<p>No subscriptions are ending within the notification window.</p>';
+    notificationsContainer.innerHTML = '<p>Nuk ka abonime që skadojnë brenda dritares së njoftimeve.</p>';
     return;
   }
 
@@ -30,31 +48,33 @@ const renderNotifications = (data) => {
         <td>${item.email}</td>
         <td>${item.discordTag}</td>
         <td>${formatDate(item.expiresAt)}</td>
-        <td class="status-soon">${daysLeft} day(s)</td>
+        <td class="status-soon">${daysLeft} ditë</td>
       </tr>
     `;
   }).join('');
 
   notificationsContainer.innerHTML = `
-    <p class="notification-summary">Showing subscriptions expiring within the next ${data.windowDays} days.</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Client</th>
-          <th>Email</th>
-          <th>Discord</th>
-          <th>Expires</th>
-          <th>Time left</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <p class="notification-summary">Shfaq abonimet që skadojnë brenda ${data.windowDays} ditësh.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Klienti</th>
+            <th>Email</th>
+            <th>Discord</th>
+            <th>Skadon</th>
+            <th>Ditë</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
   `;
 };
 
 const renderClientList = (items) => {
   if (!items || items.length === 0) {
-    clientList.innerHTML = '<p>No clients registered yet.</p>';
+    clientList.innerHTML = '<p>Nuk ka klientë të regjistruar ende.</p>';
     return;
   }
 
@@ -68,35 +88,37 @@ const renderClientList = (items) => {
         <td>${item.phoneNumber || '-'}</td>
         <td>${item.discordTag}</td>
         <td>${formatDate(item.registeredAt)}</td>
-        <td>${item.planMonths} month(s)</td>
+        <td>${item.planMonths} muaj</td>
         <td>${formatDate(item.expiresAt)}</td>
         <td class="${statusClass}">${daysLeft}</td>
         <td class="action-cell">
-          <input type="number" min="1" value="1" class="input-small extend-input" data-id="${item.id}" aria-label="Extend months" />
-          <button type="button" class="small-button extend-button" data-id="${item.id}">Extend</button>
-          <button type="button" class="small-button danger delete-button" data-id="${item.id}">Delete</button>
+          <input type="number" min="1" value="1" class="input-small extend-input" data-id="${item.id}" aria-label="Zgjat muaj" />
+          <button type="button" class="small-button extend-button" data-id="${item.id}">Zgjat</button>
+          <button type="button" class="small-button danger delete-button" data-id="${item.id}">Fshij</button>
         </td>
       </tr>
     `;
   }).join('');
 
   clientList.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Client</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Discord</th>
-          <th>Registered</th>
-          <th>Plan</th>
-          <th>Expires</th>
-          <th>Days left</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Klienti</th>
+            <th>Email</th>
+            <th>Telefon</th>
+            <th>Discord</th>
+            <th>Regjistruar</th>
+            <th>Plan</th>
+            <th>Skadon</th>
+            <th>Ditë</th>
+            <th>Veprime</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
   `;
 
   attachClientActions();
@@ -121,20 +143,45 @@ const attachClientActions = () => {
 };
 
 const loadClients = async () => {
-  const response = await fetch('/api/clients');
-  const data = await response.json();
-  renderClientList(data);
+  try {
+    const response = await fetch('/api/clients');
+    if (!response.ok) {
+      throw new Error('Nuk u ngarkuan klientët');
+    }
+    const data = await response.json();
+    renderClientList(data);
+  } catch (error) {
+    clientList.innerHTML = `<p>${error.message}</p>`;
+  }
+};
+
+const fetchAuthStatus = async () => {
+  try {
+    const response = await fetch('/api/auth-status');
+    const data = await response.json();
+    showScreen(data.authenticated);
+    if (data.authenticated) {
+      await loadAppData();
+    }
+  } catch (error) {
+    showMessage(loginMessage, 'Nuk u lidh shërbimi i autorizimit.', 'error');
+  }
+};
+
+const loadAppData = async () => {
+  await Promise.all([loadClients(), loadSettings(), loadNotifications()]);
 };
 
 const loadSettings = async () => {
   try {
     const response = await fetch('/api/settings');
     const settings = await response.json();
-    adminEmailInput.value = settings.adminEmail || '';
+    profileEmailInput.value = settings.adminEmail || '';
+    profileEmailLabel.textContent = settings.adminEmail || '-';
     notificationWindowInput.value = settings.notificationWindowDays || 7;
     notificationWindowDays = settings.notificationWindowDays || 7;
   } catch (error) {
-    showMessage(settingsMessage, 'Unable to load settings.', 'error');
+    showMessage(settingsMessage, 'Nuk u ngarkuan vendosjet.', 'error');
   }
 };
 
@@ -144,7 +191,7 @@ const loadNotifications = async () => {
     const data = await response.json();
     renderNotifications(data);
   } catch (error) {
-    notificationsContainer.innerHTML = '<p>Unable to load notifications.</p>';
+    notificationsContainer.innerHTML = '<p>Nuk u ngarkuan njoftimet.</p>';
   }
 };
 
@@ -152,12 +199,10 @@ const deleteClient = async (id) => {
   try {
     const response = await fetch(`/api/clients/${id}`, { method: 'DELETE' });
     if (!response.ok) {
-      throw new Error('Could not delete client');
+      throw new Error('Nuk u fshi klienti.');
     }
-    showMessage(formMessage, 'Client deleted successfully.', 'success');
-    formMessage.scrollIntoView({ behavior: 'smooth' });
-    loadClients();
-    loadNotifications();
+    showMessage(formMessage, 'Klienti u fshi me sukses.', 'success');
+    await loadAppData();
   } catch (error) {
     showMessage(formMessage, error.message, 'error');
   }
@@ -165,7 +210,7 @@ const deleteClient = async (id) => {
 
 const extendClient = async (id, months) => {
   if (!Number.isInteger(months) || months <= 0) {
-    showMessage(formMessage, 'Enter a valid month count to extend.', 'error');
+    showMessage(formMessage, 'Vendosni një numër muazhesh të vlefshëm.', 'error');
     return;
   }
 
@@ -177,16 +222,44 @@ const extendClient = async (id, months) => {
     });
     const result = await response.json();
     if (!response.ok) {
-      throw new Error(result.error || 'Failed to extend subscription');
+      throw new Error(result.error || 'Nuk u zgjat abonimi');
     }
 
-    showMessage(formMessage, `Subscription extended by ${months} month(s).`, 'success');
-    loadClients();
-    loadNotifications();
+    showMessage(formMessage, 'Abonimi u zgjat me sukses.', 'success');
+    await loadAppData();
   } catch (error) {
     showMessage(formMessage, error.message, 'error');
   }
 };
+
+loginForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  showMessage(loginMessage, '', '');
+
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Hyrja dështoi');
+    }
+    showScreen(true);
+    await loadAppData();
+  } catch (error) {
+    showMessage(loginMessage, error.message, 'error');
+  }
+});
+
+logoutButton.addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  showScreen(false);
+});
 
 clientForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -198,6 +271,10 @@ clientForm.addEventListener('submit', async (event) => {
     lastName: formData.get('lastName').trim(),
     birthday: formData.get('birthday'),
     discordTag: formData.get('discordTag').trim(),
+    phoneNumber: formData.get('phoneNumber').trim(),
+    email: formData.get('email').trim(),
+    planMonths: Number(formData.get('planMonths')),
+  };
 
   try {
     const response = await fetch('/api/clients', {
@@ -205,17 +282,15 @@ clientForm.addEventListener('submit', async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-
     const result = await response.json();
     if (!response.ok) {
-      throw new Error(result.error || 'Failed to create client');
+      throw new Error(result.error || 'Regjistrimi i klientit dështoi');
     }
 
-    showMessage(formMessage, 'Client registered successfully!', 'success');
+    showMessage(formMessage, 'Klienti u regjistrua me sukses.', 'success');
     clientForm.reset();
     clientForm.querySelector('[name="planMonths"]').value = '1';
-    loadClients();
-    loadNotifications();
+    await loadAppData();
   } catch (error) {
     showMessage(formMessage, error.message, 'error');
   }
@@ -229,24 +304,41 @@ settingsForm.addEventListener('submit', async (event) => {
     const response = await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        adminEmail: adminEmailInput.value.trim(),
-        notificationWindowDays: Number(notificationWindowInput.value),
-      }),
+      body: JSON.stringify({ notificationWindowDays: Number(notificationWindowInput.value) }),
     });
     const result = await response.json();
     if (!response.ok) {
-      throw new Error(result.error || 'Failed to save settings');
+      throw new Error(result.error || 'Nuk u ruajtën vendosjet');
     }
 
-    showMessage(settingsMessage, 'Notification settings saved.', 'success');
+    showMessage(settingsMessage, 'Vendosjet u ruajtën.', 'success');
     notificationWindowDays = result.notificationWindowDays;
-    loadNotifications();
+    await loadNotifications();
   } catch (error) {
     showMessage(settingsMessage, error.message, 'error');
   }
 });
 
-loadSettings();
-loadClients();
-loadNotifications();
+profileForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  showMessage(profileMessage, '', '');
+
+  try {
+    const response = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminEmail: profileEmailInput.value.trim() }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Nuk u ruajt emaili');
+    }
+
+    showMessage(profileMessage, 'Email u ruajt.', 'success');
+    profileEmailLabel.textContent = result.adminEmail || '-';
+  } catch (error) {
+    showMessage(profileMessage, error.message, 'error');
+  }
+});
+
+fetchAuthStatus();
