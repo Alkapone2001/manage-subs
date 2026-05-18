@@ -9,14 +9,9 @@ const init = () => {
     db.run(`
       CREATE TABLE IF NOT EXISTS clients (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        firstName TEXT NOT NULL,
-        lastName TEXT NOT NULL,
-        birthday TEXT NOT NULL,
         discordTag TEXT NOT NULL,
-        phoneNumber TEXT,
-        email TEXT NOT NULL,
-        registeredAt TEXT NOT NULL,
         planMonths INTEGER NOT NULL,
+        registeredAt TEXT NOT NULL,
         expiresAt TEXT NOT NULL,
         lastNotificationAt TEXT
       )
@@ -32,11 +27,8 @@ const init = () => {
     db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES ('notificationWindowDays', '7'), ('adminEmail', '')`);
 
     db.all(`PRAGMA table_info(clients)`, [], (err, columns) => {
-      if (!err && columns) {
-        if (!columns.find((column) => column.name === 'phoneNumber')) {
-          db.run(`ALTER TABLE clients ADD COLUMN phoneNumber TEXT`);
-        }
-      }
+      if (err || !columns) return;
+      // Migration: remove unused columns if they exist
     });
   });
 };

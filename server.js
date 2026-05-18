@@ -97,11 +97,11 @@ const createClient = (client, callback) => {
   const expiresAt = dayjs(registeredAt).add(client.planMonths, 'month').endOf('day').toISOString();
 
   db.run(
-    `INSERT INTO clients (firstName, lastName, birthday, discordTag, phoneNumber, email, registeredAt, planMonths, expiresAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [client.firstName, client.lastName, client.birthday, client.discordTag, client.phoneNumber || null, client.email, registeredAt, client.planMonths, expiresAt],
+    `INSERT INTO clients (discordTag, planMonths, registeredAt, expiresAt) VALUES (?, ?, ?, ?)`,
+    [client.discordTag, client.planMonths, registeredAt, expiresAt],
     function (err) {
       if (err) return callback(err);
-      callback(null, { id: this.lastID, ...client, registeredAt, expiresAt });
+      callback(null, { id: this.lastID, discordTag: client.discordTag, planMonths: client.planMonths, registeredAt, expiresAt });
     }
   );
 };
@@ -115,7 +115,7 @@ const buildNotificationMessage = (clients) => {
   let body = 'The following subscriptions are ending soon:\n\n';
   clients.forEach((client) => {
     const daysLeft = dayjs(client.expiresAt).diff(dayjs(), 'day');
-    body += `${client.firstName} ${client.lastName} | ${client.email} | Expires in ${daysLeft} day(s) on ${dayjs(client.expiresAt).format('YYYY-MM-DD')}\n`;
+    body += `${client.discordTag} | Expires in ${daysLeft} day(s) on ${dayjs(client.expiresAt).format('YYYY-MM-DD')}\n`;
   });
   return body;
 };
@@ -215,7 +215,7 @@ app.get('/api/clients', requireAuth, (req, res) => {
 
 app.post('/api/clients', requireAuth, (req, res) => {
   const client = req.body;
-  const required = ['firstName', 'lastName', 'birthday', 'discordTag', 'phoneNumber', 'email', 'planMonths'];
+  const required = ['discordTag', 'planMonths'];
   const missingFields = required.filter((field) => !client[field]);
   if (missingFields.length) {
     return res.status(400).json({ error: `Missing fields: ${missingFields.join(', ')}` });

@@ -46,8 +46,6 @@ const renderNotifications = (data) => {
     const daysLeft = Math.max(0, Math.ceil((new Date(item.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)));
     return `
       <tr>
-        <td>${item.firstName} ${item.lastName}</td>
-        <td>${item.email}</td>
         <td>${item.discordTag}</td>
         <td>${formatDate(item.expiresAt)}</td>
         <td class="status-soon">${daysLeft} ditë</td>
@@ -61,8 +59,6 @@ const renderNotifications = (data) => {
       <table>
         <thead>
           <tr>
-            <th>Klienti</th>
-            <th>Email</th>
             <th>Discord</th>
             <th>Skadon</th>
             <th>Ditë</th>
@@ -85,12 +81,9 @@ const renderClientList = (items) => {
     const statusClass = daysLeft <= notificationWindowDays ? 'status-soon' : '';
     return `
       <tr>
-        <td>${item.firstName} ${item.lastName}</td>
-        <td>${item.email}</td>
-        <td>${item.phoneNumber || '-'}</td>
         <td>${item.discordTag}</td>
-        <td>${formatDate(item.registeredAt)}</td>
         <td>${item.planMonths} muaj</td>
+        <td>${formatDate(item.registeredAt)}</td>
         <td>${formatDate(item.expiresAt)}</td>
         <td class="${statusClass}">${daysLeft}</td>
         <td class="action-cell">
@@ -107,12 +100,9 @@ const renderClientList = (items) => {
       <table>
         <thead>
           <tr>
-            <th>Klienti</th>
-            <th>Email</th>
-            <th>Telefon</th>
             <th>Discord</th>
-            <th>Regjistruar</th>
             <th>Plan</th>
+            <th>Regjistruar</th>
             <th>Skadon</th>
             <th>Ditë</th>
             <th>Veprime</th>
@@ -269,12 +259,7 @@ clientForm.addEventListener('submit', async (event) => {
 
   const formData = new FormData(clientForm);
   const payload = {
-    firstName: formData.get('firstName').trim(),
-    lastName: formData.get('lastName').trim(),
-    birthday: formData.get('birthday'),
     discordTag: formData.get('discordTag').trim(),
-    phoneNumber: formData.get('phoneNumber').trim(),
-    email: formData.get('email').trim(),
     planMonths: Number(formData.get('planMonths')),
   };
 
